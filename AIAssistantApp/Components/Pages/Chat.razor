@@ -1,0 +1,142 @@
+﻿@page "/chat"
+@rendermode InteractiveServer
+@using AIAssistantApp.Client
+@inject ChatClient ChatClient
+@using Blazored.Toast.Services
+@inject IToastService ToastService
+
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Chat with Bot</PageTitle>
+
+<!-- Include the external CSS file -->
+<link rel="stylesheet" href="chat.css" />
+
+<h1>Chat with Bot</h1>
+
+<div class="chat-container">
+    <div class="input-area">
+        <input @ref="textInput" type="text" @bind="userInput" @onkeyup="HandleKeyUp" disabled="@isProcessing"
+            placeholder="Type your message here..." />
+        <button @onclick="SendMessage" disabled="@isProcessing">Send</button>
+    </div>
+    @if (isProcessing)
+    {
+        <div class="progress">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+        </div>
+    }
+    <div class="message-history">
+        @for (int i = messages.Count - 1; i >= 0; i--)
+        {
+            var message = messages[i];
+            <div class="@message.Style">@message.Text</div>
+        }
+    </div>
+</div>
+
+@code {
+    private string userInput = string.Empty;
+    private List<ChatMessage> messages = new List<ChatMessage>();
+    private ElementReference textInput;
+    private bool isProcessing = false;
+    private string sessionId;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            sessionId = await JSRuntime.InvokeAsync<string>("generateSessionId");
+            await JSRuntime.InvokeVoidAsync("setFocusToElement", textInput);
+            await ScrollToBottom();
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(userInput))
+        {
+            ToastService.ShowError("Message cannot be empty.");
+            return;
+        }
+
+        isProcessing = true;
+        StateHasChanged(); // Ensure the button is disabled while processing
+
+        try
+        {
+            AddMessage("You: " + userInput, "user-message");
+            var response = await ChatClient.SendMessageToBackendAsync(sessionId, userInput);
+            AddMessage("Bot: " + response, "bot-message");
+        }
+        catch (Exception ex)
+        {
+            // Handle the exception, possibly log it or display a message
+            ToastService.ShowError("An error occurred while sending the message.");
+        }
+        finally
+        {
+            userInput = ""; // Clear the user input after processing is done
+            isProcessing = false;
+            StateHasChanged(); // Re-enable the button and update the UI
+            await JSRuntime.InvokeVoidAsync("setFocusToElement", textInput);
+            await ScrollToBottom();
+        }
+    }
+
+    private void AddMessage(string text, string style)
+    {
+        messages.Add(new ChatMessage { Text = text, Style = style });
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter" && !string.IsNullOrWhiteSpace(userInput))
+        {
+            await SendMessage(); // Await the SendMessage method directly
+        }
+    }
+
+    private async Task ScrollToBottom()
+    {
+        await JSRuntime.InvokeVoidAsync("scrollToBottom", "message-history");
+    }
+
+    private class ChatMessage
+    {
+        public string Text { get; set; }
+        public string Style { get; set; }
+    }
+}
+
+
+
+<script>
+    window.generateSessionId = () => {
+        let sessionId = sessionStorage.getItem('chatSessionId');
+        if (!sessionId) {
+            sessionId = createUUID();
+            sessionStorage.setItem('chatSessionId', sessionId);
+        }
+        return sessionId;
+    };
+
+    function createUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    window.setFocusToElement = (element) => {
+        element.focus();
+    };
+
+    window.scrollToBottom = (elementId) => {
+        var element = document.getElementById(elementId);
+        if (element) {
+            element.scrollTop = element.scrollHeight;
+        }
+    };
+</script>

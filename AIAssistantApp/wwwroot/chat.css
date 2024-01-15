@@ -1,0 +1,76 @@
+﻿.chat-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.input-area {
+    display: flex;
+    padding-bottom: 10px;
+}
+
+.message-history { /* Updated class name */
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+    background-color: #fafafa;
+    height: calc(100vh - 150px); /* Adjust height as necessary */
+}
+
+input[type="text"] {
+    flex-grow: 1;
+    margin-right: 5px;
+    padding: 10px;
+    border: 1px solid #ddd; /* Lighter border color */
+    border-radius: 15px; /* Rounded borders for the input */
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 15px; /* Rounded borders for the button */
+    background-color: #007bff; /* Bootstrap primary color */
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3; /* Darken the button color on hover */
+}
+
+.user-message {
+    background-color: magenta;
+}
+
+.bot-message {
+    background-color: lime;
+}
+
+.user-message, .bot-message {
+    display: block;
+    margin-bottom: 10px; /* Spacing between messages */
+    padding: 10px;
+    border-radius: 20px; /* More pronounced rounded corners for bubbles */
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+
+/* If you have a spinner, make sure to include it in your component */
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border-left-color: #007bff;
+    animation: spin 1s ease infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
